@@ -1,0 +1,16 @@
+[Unit]
+Description=Qdrant Vector Database
+After=network.target
+
+[Service]
+Type=simple
+User=qdrant
+Group=qdrant
+WorkingDirectory=/var/lib/qdrant
+ExecStart=/usr/bin/qdrant
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

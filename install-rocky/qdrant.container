@@ -1,0 +1,22 @@
+# Rootless Podman Quadlet unit for Qdrant.
+# Drop this file at ~/.config/containers/systemd/qdrant.container
+# then run:  systemctl --user daemon-reload
+#            systemctl --user enable --now qdrant
+[Unit]
+Description=Qdrant Vector Database (rootless)
+After=network-online.target
+
+[Container]
+ContainerName=qdrant
+Image=docker.io/qdrant/qdrant:latest
+PublishPort=6333:6333
+PublishPort=6334:6334
+Volume=%h/qdrant-storage:/qdrant/storage:z,U
+Environment=QDRANT__TELEMETRY_DISABLED=true
+
+[Service]
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

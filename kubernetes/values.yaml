@@ -1,0 +1,30 @@
+# cfg-lab Qdrant 3-node HA values
+replicaCount: 3
+
+image:
+  tag: v1.18.1
+
+# Spread pods across nodes
+podAntiAffinity:
+  enabled: true
+
+# Cluster mode requires this
+cluster:
+  enabled: true
+
+# Storage: 4Gi per pod via k3s default local-path
+persistence:
+  size: 4Gi
+  storageClassName: local-path
+
+# Strong api-key from values; in prod use secretKeyRef
+apiKey: CHANGE_ME_TO_A_STRONG_KEY
+
+# Resources sized for t3.small-equivalent 4 GB VMs
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi

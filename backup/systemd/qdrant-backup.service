@@ -1,0 +1,9 @@
+[Unit]
+Description=Snapshot Qdrant collections and sync to S3
+After=network-online.target
+
+[Service]
+Type=oneshot
+Environment="BUCKET=cfg-qdrant-snapshots"
+Environment="SNAPSHOT_DIR=/opt/qdrant/snapshots"
+ExecStart=/usr/local/bin/qdrant-backup.sh

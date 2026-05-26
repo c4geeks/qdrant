@@ -1,0 +1,17 @@
+replicaCount: 3
+image:
+  tag: v1.18.1
+podAntiAffinity:
+  enabled: true
+cluster:
+  enabled: true
+persistence:
+  size: 3Gi
+  storageClassName: local-path
+apiKey: CHANGE_ME_TO_A_STRONG_KEY
+resources:
+  requests: {cpu: 200m, memory: 384Mi}
+  limits:   {cpu: 800m, memory: 768Mi}
+metrics:
+  serviceMonitor:
+    enabled: true   # enable ServiceMonitor for kube-prometheus-stack

@@ -1,0 +1,58 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: qdrant
+  namespace: qdrant
+  labels:
+    app.kubernetes.io/name: qdrant
+spec:
+  groups:
+    - name: qdrant.rules
+      interval: 30s
+      rules:
+        # Fires when fewer than 3 scrape targets are responding
+        - alert: QdrantPeerCountBelowExpected
+          expr: count(up{job="qdrant-headless"}) < 3
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Only {{ $value }} Qdrant peers responding (expected 3)"
+            description: "kube-prometheus-stack is scraping fewer than 3 Qdrant pods. One or more peers may be down."
+
+        # Fires when a known target stops responding mid-flight
+        - alert: QdrantTargetDown
+          expr: up{job="qdrant-headless"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Qdrant pod {{ $labels.pod }} is not responding"
+            description: "Prometheus has not scraped {{ $labels.pod }} for at least 1m."
+
+        - alert: QdrantHighSearchLatency
+          expr: histogram_quantile(0.95, sum(rate(rest_responses_duration_seconds_bucket{endpoint="/collections/{collection_name}/points/query"}[5m])) by (le)) > 0.1
+          for: 3m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Qdrant /points/query p95 > 100 ms"
+            description: "Search latency p95 over 5m is above the 100 ms SLO."
+
+        - alert: QdrantDeadReplicas
+          expr: collection_dead_replicas > 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Qdrant has {{ $value }} dead shard replicas"
+            description: "At least one shard replica is in a non-active state. Investigate {{ $labels.pod }}."
+
+        - alert: QdrantRaftBacklog
+          expr: max(cluster_pending_operations_total) > 100
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Raft has > 100 pending operations"
+            description: "Pending raft ops indicates consensus is struggling."

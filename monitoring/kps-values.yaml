@@ -1,0 +1,63 @@
+# Lightweight kube-prometheus-stack for the lab.
+# Trim everything that bloats a 4 GB worker.
+
+# Allow Prometheus to pick up ServiceMonitors from any namespace
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    retention: 2d
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 800m
+        memory: 1Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          resources:
+            requests:
+              storage: 5Gi
+
+# Grafana admin password fixed for the lab; rotate in prod
+grafana:
+  adminPassword: CHANGE_ME_GRAFANA_ADMIN_PASS
+  resources:
+    requests:
+      cpu: 100m
+      memory: 192Mi
+  persistence:
+    enabled: true
+    storageClassName: local-path
+    size: 1Gi
+
+# Trim what we don't need in the lab
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 96Mi
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          resources:
+            requests:
+              storage: 1Gi
+
+# These scrape-everything defaults can stay; small overhead on a 3-node lab
+kubeStateMetrics:
+  enabled: true
+nodeExporter:
+  enabled: true
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi

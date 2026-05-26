@@ -1,0 +1,107 @@
+{
+  "id": null,
+  "uid": "qdrant-overview",
+  "title": "Qdrant Cluster Overview",
+  "tags": ["qdrant"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "time": {"from": "now-15m", "to": "now"},
+  "panels": [
+    {
+      "id": 1,
+      "title": "Cluster peers",
+      "type": "stat",
+      "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
+      "targets": [{"expr": "max(cluster_peers_total)", "datasource": {"type": "prometheus", "uid": "prometheus"}}],
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"steps": [{"value": null, "color": "red"}, {"value": 3, "color": "green"}]}}}
+    },
+    {
+      "id": 2,
+      "title": "Raft term",
+      "type": "stat",
+      "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
+      "targets": [{"expr": "max(cluster_term)", "datasource": {"type": "prometheus", "uid": "prometheus"}}],
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 5, "color": "yellow"}, {"value": 20, "color": "red"}]}}}
+    },
+    {
+      "id": 3,
+      "title": "Collections",
+      "type": "stat",
+      "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
+      "targets": [{"expr": "max(collections_total)", "datasource": {"type": "prometheus", "uid": "prometheus"}}]
+    },
+    {
+      "id": 4,
+      "title": "Total vectors",
+      "type": "stat",
+      "gridPos": {"x": 12, "y": 0, "w": 4, "h": 4},
+      "targets": [{"expr": "max(collections_vector_total)", "datasource": {"type": "prometheus", "uid": "prometheus"}}],
+      "fieldConfig": {"defaults": {"unit": "short"}}
+    },
+    {
+      "id": 5,
+      "title": "Pending raft ops",
+      "type": "stat",
+      "gridPos": {"x": 16, "y": 0, "w": 4, "h": 4},
+      "targets": [{"expr": "max(cluster_pending_operations_total)", "datasource": {"type": "prometheus", "uid": "prometheus"}}],
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 50, "color": "yellow"}, {"value": 500, "color": "red"}]}}}
+    },
+    {
+      "id": 6,
+      "title": "Dead replicas",
+      "type": "stat",
+      "gridPos": {"x": 20, "y": 0, "w": 4, "h": 4},
+      "targets": [{"expr": "max(collection_dead_replicas)", "datasource": {"type": "prometheus", "uid": "prometheus"}}],
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"steps": [{"value": null, "color": "green"}, {"value": 1, "color": "red"}]}}}
+    },
+    {
+      "id": 10,
+      "title": "REST requests by status (per pod)",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+      "targets": [{
+        "expr": "sum(rate(rest_responses_total[2m])) by (status, pod)",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "legendFormat": "{{pod}} status={{status}}"
+      }],
+      "fieldConfig": {"defaults": {"unit": "reqps"}}
+    },
+    {
+      "id": 11,
+      "title": "Search latency (query endpoint, p50/p95/p99)",
+      "type": "timeseries",
+      "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum(rate(rest_responses_duration_seconds_bucket{endpoint=\"/collections/{collection_name}/points/query\"}[2m])) by (le))", "legendFormat": "p50", "datasource": {"type": "prometheus", "uid": "prometheus"}},
+        {"expr": "histogram_quantile(0.95, sum(rate(rest_responses_duration_seconds_bucket{endpoint=\"/collections/{collection_name}/points/query\"}[2m])) by (le))", "legendFormat": "p95", "datasource": {"type": "prometheus", "uid": "prometheus"}},
+        {"expr": "histogram_quantile(0.99, sum(rate(rest_responses_duration_seconds_bucket{endpoint=\"/collections/{collection_name}/points/query\"}[2m])) by (le))", "legendFormat": "p99", "datasource": {"type": "prometheus", "uid": "prometheus"}}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s"}}
+    },
+    {
+      "id": 12,
+      "title": "Memory by pod (active bytes)",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+      "targets": [{
+        "expr": "memory_active_bytes",
+        "legendFormat": "{{pod}}",
+        "datasource": {"type": "prometheus", "uid": "prometheus"}
+      }],
+      "fieldConfig": {"defaults": {"unit": "bytes"}}
+    },
+    {
+      "id": 13,
+      "title": "Points per collection per pod",
+      "type": "timeseries",
+      "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+      "targets": [{
+        "expr": "collection_points",
+        "legendFormat": "{{pod}} {{collection}}",
+        "datasource": {"type": "prometheus", "uid": "prometheus"}
+      }]
+    }
+  ]
+}

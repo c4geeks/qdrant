@@ -1,0 +1,14 @@
+langchain==0.3.27
+langchain-core==0.3.78
+langchain-community==0.3.31
+langchain-qdrant==0.2.1
+langchain-ollama==0.3.10
+langchain-text-splitters==0.3.11
+qdrant-client==1.18.0
+fastembed==0.5.1
+ragas==0.2.15
+datasets==3.6.0
+pandas==2.2.3
+unstructured==0.16.20
+markdown==3.7
+tqdm==4.67.1

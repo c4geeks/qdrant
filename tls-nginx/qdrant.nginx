@@ -1,0 +1,74 @@
+# /etc/nginx/sites-available/qdrant
+# REST (HTTP/1.1) and gRPC (HTTP/2) reverse proxy for a localhost-bound Qdrant.
+
+# 5 requests per second per source IP, burst 20, queued without 503 until burst is full
+limit_req_zone $binary_remote_addr zone=qdrant_rl:10m rate=5r/s;
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name qdrant-secure.computingforgeeks.com;
+    return 301 https://$host$request_uri;
+}
+
+# REST API on 443
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name qdrant-secure.computingforgeeks.com;
+
+    ssl_certificate     /etc/letsencrypt/live/qdrant-secure.computingforgeeks.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/qdrant-secure.computingforgeeks.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # Hide server tokens, set basic hardening headers
+    server_tokens off;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "no-referrer" always;
+
+    client_max_body_size 128m;       # allow large upserts
+    proxy_read_timeout   120s;       # snapshots and big scrolls can take a while
+
+    location / {
+        limit_req zone=qdrant_rl burst=20 nodelay;
+        limit_req_status 429;
+
+        proxy_pass http://127.0.0.1:6333;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+    }
+}
+
+# gRPC on 6334 — separate server block because grpc_pass needs HTTP/2 end-to-end
+server {
+    listen 6334 ssl http2;
+    listen [::]:6334 ssl http2;
+    server_name qdrant-secure.computingforgeeks.com;
+
+    ssl_certificate     /etc/letsencrypt/live/qdrant-secure.computingforgeeks.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/qdrant-secure.computingforgeeks.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    server_tokens off;
+
+    grpc_read_timeout   120s;
+    grpc_send_timeout   120s;
+    client_max_body_size 128m;
+
+    location / {
+        limit_req zone=qdrant_rl burst=50 nodelay;
+        limit_req_status 429;
+
+        # Qdrant gRPC on the loopback. Note grpc:// (cleartext to backend).
+        # Internal-only port 16334 so nginx can bind 0.0.0.0:6334 for TLS.
+        grpc_pass grpc://127.0.0.1:16334;
+        grpc_set_header X-Real-IP $remote_addr;
+    }
+}
